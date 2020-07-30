@@ -163,7 +163,7 @@ class DRN(nn.Module):
 
         
         if pretrained:
-            print('sssssssssssssssssssssssssssssssssss')
+            # print('sssssssssssssssssssssssssssssssssss')
             print(weights_init)
             if not weights_init is None:
                 state_dict = torch.load(weights_init)

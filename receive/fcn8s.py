@@ -209,12 +209,12 @@ class Discriminator(nn.Module):
 
     def forward(self, x): 
         x = self.D(x)
-        print('init:',x.shape)
+        # print('init:',x.shape)
         x = x.view(x.size(0), -1)
-        print('view:',x.shape)
+        # print('view:',x.shape)
         x = self.linear_layers(x)
-        print('linear:',x.shape)
-        print('sigmoid:',x.shape)
+        # print('linear:',x.shape)
+        # print('sigmoid:',x.shape)
         return torch.sigmoid(x)
 
     def load_weights(self, weights):

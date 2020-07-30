@@ -43,6 +43,7 @@ def check_label(label, num_cls):
         return False
     return True
 
+
 class AddaDataset(data.Dataset):
 
     def __init__(self, mr_img, mr_gt, ct_img, ct_gt):
@@ -72,6 +73,52 @@ def forward_pass(net, discriminator, im, requires_grad=False, discrim_feat=False
     return score, dis_score
 #score四维 dis_score二维
 
+# class DiceLoss(nn.Module):
+#     def __init__(self, input, target):
+#         super(DiceLoss, self).__init__()
+ 
+#     def forward(self, input, target):
+#         N = target.size(0)
+#         smooth = 1
+ 
+#         input_flat = input.view(N, -1)
+#         target_flat = target.view(N, -1)
+ 
+#         intersection = input_flat * target_flat
+ 
+#         loss = 2 * (intersection.sum(1) + smooth) / (input_flat.sum(1) + target_flat.sum(1) + smooth)
+#         loss = 1 - loss.sum() / N
+#         print('aaaaaaaffffffffff:',loss)
+ 
+#         return loss
+
+def dice(input, target):
+    N = target.size(0)
+    smooth = 1
+
+    input_flat = input.view(N, -1)
+    target_flat = target.view(N, -1)
+
+    intersection = input_flat * target_flat
+
+    loss = 2 * (intersection.sum(1) + smooth) / (input_flat.sum(1) + target_flat.sum(1) + smooth)
+    c = loss.sum()
+    loss = 1 - c.item () / N
+
+    print('diceloss',loss)
+
+    return loss
+
+# def Dice(inp, target, eps=1):
+# 	# 抹平了，弄成一维的
+#     input_flatten = inp.flatten()
+#     target_flatten = target.flatten()
+#     # 计算交集中的数量
+#     overlap = np.sum(input_flatten * target_flatten)
+#     # 返回值，让值在0和1之间波动
+#     return np.clip(((2. * overlap) / (np.sum(target_flatten) + np.sum(input_flatten) + eps)), 1e-4, 0.9999)
+
+
 def supervised_loss(score, label, weights=None):
     loss_fn_ = torch.nn.NLLLoss(weight=weights, size_average=True, 
             ignore_index=255)
@@ -99,12 +146,12 @@ def seg_accuracy(score, label, num_cls):
             preds.cpu().numpy().flatten(), num_cls)
     intersections = np.diag(hist)
     unions = (hist.sum(1) + hist.sum(0) - np.diag(hist) + 1e-8) * 100
-    print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',hist.shape)
-    print(label[2])
+    # print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',hist.shape)
+    # print(label[2])
     acc = np.diag(hist).sum() / hist.sum()
     return intersections, unions, acc
 
-dir="/home/chenxi/cycada_release_0717/data_npy/"
+dir="/home/chenxi/cycada_release_0717/data_npy_test/"
 
 def load_data(dset, batch=64, kwargs={}):
     is_train = (dset == 'train')
@@ -147,30 +194,30 @@ def load_data(dset, batch=64, kwargs={}):
     ct_gt=np.load(file)
     ct_gt = torch.from_numpy(ct_gt)
     ct_gt = ct_gt.type(torch.LongTensor)
-    print(ct_gt.shape)
+    # print(ct_gt.shape)
     file=dir+'mr_gt.npy'
     mr_gt=np.load(file)
     mr_gt = torch.from_numpy(mr_gt)
     mr_gt = mr_gt.type(torch.LongTensor)
-    print(mr_gt.shape)
+    #print(mr_gt.shape)
     file=dir+'ct_img.npy'
     ct_img=np.load(file)
     ct_img = torch.from_numpy(ct_img)
     ct_img = ct_img.type(torch.FloatTensor)
-    print(ct_img.shape)
+    #print(ct_img.shape)
     file=dir+'mr_img.npy'
     mr_img=np.load(file)
     mr_img = torch.from_numpy(mr_img)
     mr_img = mr_img.type(torch.FloatTensor)
-    print(mr_img.shape)
+    #print(mr_img.shape)
     
 
     dataset = AddaDataset(mr_img, mr_gt, ct_img, ct_gt)
-    print('test2')
-    print(len(mr_img))
+    # print('test2')
+    # print(len(mr_img))
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch, 
             shuffle=is_train, **kwargs)
-    print('test3:',len(loader))        
+    #print('test3:',len(loader))        
 
     return loader
 
@@ -235,7 +282,7 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
 
     if weights_shared:
         net_src = net # shared weights
-        print('aoaoaoaoao')
+        #print('aoaoaoaoao')
     else:
         net_src = get_model(model, num_cls=num_cls, pretrained=True, 
                 weights_init=weights_init, output_last_ft=discrim_feat)
@@ -250,8 +297,8 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
             weights_init=weights_discrim).cuda()
 
     loader = load_data(dset="train",batch=batch)
-    print('len(loader):',len(loader))
-    print('dataset', dataset)
+    # print('len(loader):',len(loader))
+    # print('dataset', dataset)
 
     # Class weighted loss?
     if cls_weights is not None:
@@ -286,7 +333,7 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
         print('iteration:',iteration)
         
         for im_s, im_t, label_s, label_t in loader:
-            print(im_s.shape)
+            # print(im_s.shape)
             
             if iteration > max_iter:
                 break
@@ -318,7 +365,7 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
                 score_s = Variable(score_s.data, requires_grad=False)
                 f_s = Variable(feat_s.data, requires_grad=False)
             else:
-                print('test1')
+                #print('test1')
                 score_s = Variable(net_src(im_s).data, requires_grad=False)
                 f_s = score_s
             dis_score_s = discriminator(f_s)
@@ -336,9 +383,9 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
 
             # prepare real and fake labels
             batch_t,_ = dis_score_t.size()
-            print('dis_score_t.size:',dis_score_t.shape)
+            #print('dis_score_t.size:',dis_score_t.shape)
             batch_s,_ = dis_score_s.size()
-            print('dis_score_s.size:',dis_score_s.shape)
+            #print('dis_score_s.size:',dis_score_s.shape)
             dis_label_concat = make_variable(
                     torch.cat(
                         [torch.ones(batch_s).long(), 
@@ -369,9 +416,9 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
             ###########################
            
             dom_acc_thresh = 60
-            print('np.mean(accuracies_dom):',np.mean(accuracies_dom))
-            print('train_discrim_only:',train_discrim_only)
-            print('weights_shared:',weights_shared)
+            # print('np.mean(accuracies_dom):',np.mean(accuracies_dom))
+            # print('train_discrim_only:',train_discrim_only)
+            # print('weights_shared:',weights_shared)
             if not train_discrim_only and np.mean(accuracies_dom) > dom_acc_thresh:
               
                 last_update_g = iteration
@@ -415,8 +462,8 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
             if (not train_discrim_only) and weights_shared and (np.mean(accuracies_dom) > dom_acc_thresh):
                
                 print('Updating G using source supervised loss.')
-                print('score_t:',score_t.shape)
-                print('label_t:',label_t.shape)
+                # print('score_t:',score_t.shape)
+                # print('label_t:',label_t.shape)
 
                 # zero out optimizer gradients
                 opt_dis.zero_grad()
@@ -471,10 +518,18 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
             #         _, s = torch.max(score_t[i].data, 0)
             #         s = s.cpu()
             #         scipy.misc.imsave('/home/chenxi/cycada_release_0717/score/' + str(i) + '_' + str(iteration) + 'out.jpg', s)
+            
+            
+            if iteration == 0:
+                _, s = torch.max(score_t.data, 1)
+                # print('fffffffffffff',s.shape)
+                dice(label_t,s)
+
 
             if iteration == 0:
 
-                print('score_t:',score_t.shape)
+                # print('score_t:',score_t.shape)
+                # print('label_t:',label_t.shape)
                 
                 # compute metrics
                 intersection,union,acc = seg_accuracy(score_t, label_t.data, num_cls) 
@@ -489,7 +544,7 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
                 writer.add_scalar('metrics/mIoU', np.mean(mIoU), iteration)
                 logging.info(info_str)
 
-                print('acccccccccccccccccccccccccccc:',acc)
+                # print('acccccccccccccccccccccccccccc:',acc)
                   
             iteration += 1
 
