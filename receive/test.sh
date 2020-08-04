@@ -17,9 +17,10 @@ crop=768
 snapshot=5000
 batch=16
 
-weights_init="/home/chenxi/cycada_release_0717/results/cityscapes/cityscapes_drn42-iter20000.pth"
-#weights_init="/home/chenxi/cycada_release_0717/results/ct_to_mr/adda_sgd/weights_shared_nolsgan_discrim_score/drn42/lr1e-5_crop768_ld1_lg0.1_momentum0.99/net-itercurr.pth"
-#weights_init="/home/chenxi/cycada_release_0717/base_models/drn26_cycada_cyclegta2cityscapes.pth"
+
+#weights_init="/home/xiaowei/cycada_release_0717/results/cityscapes/cityscapes_drn42-iter20000.pth"
+weights_init="/home/xiaowei/cycada_release_0717/results/ct_to_mr/adda_sgd/weights_shared_nolsgan_discrim_score/drn42_1/lr1e-5_crop768_ld1_lg0.1_momentum0.99/net-itercurr.pth"
+#weights_init="/home/xiaowei/cycada_release_0717/base_models/drn26_cycada_cyclegta2cityscapes.pth"
 weight_share='weights_shared'
 discrim='discrim_score'
 
@@ -28,8 +29,8 @@ discrim='discrim_score'
 ########
 src='ct'
 tgt='mr'
-datadir='/home/chenxi/cycada_release_0717/data/'
-dataset='/home/chenxi/cycada_release_0717/data/'
+datadir='/home/xiaowei/cycada_release_0717/data/'
+dataset='/home/xiaowei/cycada_release_0717/data/'
 
 resdir="results/${src}_to_${tgt}/adda_sgd/${weight_share}_nolsgan_${discrim}"
 

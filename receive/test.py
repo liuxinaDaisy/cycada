@@ -121,16 +121,24 @@ def DiceLoss(input, target):
  
 def MulticlassDiceLoss(input, target):
 
+    encoded_target = Variable(input.data.clone())
+    encoded_target[...] = 0
+    encoded_target.scatter_(1,
+                            target.view(target.size(0), 1,
+                                        target.size(1), target.size(2)),
+                            1)
+    
+    target = encoded_target
+
     C = target.shape[1]
 
     totalLoss = 0
 
     for i in range(C):
-        diceLoss = DiceLoss(input, target[:,i])
+        diceLoss = DiceLoss(input[:,i], target[:,i])
         totalLoss += diceLoss
-
+    
     totalLoss = totalLoss / C
-
 
     return totalLoss
 
@@ -143,8 +151,41 @@ def MulticlassDiceLoss(input, target):
 #     # 返回值，让值在0和1之间波动
 #     return np.clip(((2. * overlap) / (np.sum(target_flatten) + np.sum(input_flatten) + eps)), 1e-4, 0.9999)
 
+# def dice_loss(output, target):
+#     """
+#     input is a torch variable of size BatchxnclassesxHxW representing log probabilities for each class
+#     target is a 1-hot representation of the groundtruth, shoud have same size as the input
+#     """
+#     encoded_target = Variable(output.data.clone())
+#     encoded_target[...] = 0
+#     encoded_target.scatter_(1,
+#                             target.view(target.size(0), 1,
+#                                         target.size(1), target.size(2)),
+#                             1)
 
-dir="/home/chenxi/cycada_release_0717/data_npy_test/"
+#     print(target.shape,encoded_target.shape)
+
+#     assert output.size() == encoded_target.size(), "Input sizes must be equal."
+#     assert output.dim() == 4, "Input must be a 4D Tensor."
+
+#     num = output * encoded_target  # b,c,h,w--p*g
+#     num = torch.sum(num, dim=3)  # b,c,h
+#     num = torch.sum(num, dim=2)
+
+#     den1 = output * output  # p^2
+#     den1 = torch.sum(den1, dim=3)  # b,c,h
+#     den1 = torch.sum(den1, dim=2)
+
+#     den2 = encoded_target * encoded_target  # g^2
+#     den2 = torch.sum(den2, dim=3)  # b,c,h
+#     den2 = torch.sum(den2, dim=2)  # b,c
+
+#     dice = (2 * num / (den1 + den2))
+
+#     dice_total = -1 * torch.sum(dice) / dice.size(0)
+#     return dice_total
+
+dir="/home/xiaowei/cycada_release_0717/data_npy_test/"
 
 def load_data(dset, batch=64, kwargs={}):
     is_train = (dset == 'train')
@@ -270,7 +311,9 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
     accuracy = deque(maxlen=100)
     print('max iter:', max_iter)
    
-    net.train()
+    model = net
+    model.eval()
+    # net.train()
     # discriminator.train()
 
     while iteration < max_iter:
@@ -304,7 +347,7 @@ def main(output, dataset, datadir, lr, momentum, snapshot, downscale, cls_weight
 
             print('iteration:',iteration)
 
-            loss_dice = MulticlassDiceLoss(label_t, score_t)
+            loss_dice = MulticlassDiceLoss(score_t, label_t)
             losses_dice.append(loss_dice.item())            
 
             info_str += " Dice:{:.3f} ".format(np.mean(losses_dice))
